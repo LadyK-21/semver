@@ -654,7 +654,7 @@ func TestNewConstraintTooLong(t *testing.T) {
 
 func TestNewConstraintTooManyGroups(t *testing.T) {
 	// Build a string under the length limit but with too many OR groups.
-	parts := make([]string, maxConstraintGroups+1)
+	parts := make([]string, MaxConstraintGroups+1)
 	for i := range parts {
 		parts[i] = ">= 1.0.0"
 	}

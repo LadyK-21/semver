@@ -49,7 +49,15 @@ var (
 
 	// ErrInvalidPrerelease is returned when the pre-release is an invalid format
 	ErrInvalidPrerelease = errors.New("invalid prerelease string")
+
+	// ErrVersionTooLong is returned when a version string exceeds the
+	// maximum allowed length.
+	ErrVersionTooLong = fmt.Errorf("version string is too long (max %d bytes)", MaxVersionLen)
 )
+
+// MaxVersionLen is the maximum allowed length of a version string. This guards
+// against unbounded input causing excessive memory allocations during parsing.
+const MaxVersionLen = 256
 
 // semVerRegex is the regular expression used to parse a semantic version.
 // This is not the official regex from the semver spec. It has been modified to allow for loose handling
@@ -93,6 +101,10 @@ func StrictNewVersion(v string) (*Version, error) {
 
 	if len(v) == 0 {
 		return nil, ErrEmptyString
+	}
+
+	if len(v) > MaxVersionLen {
+		return nil, ErrVersionTooLong
 	}
 
 	// Split the parts into [0]major, [1]minor, and [2]patch,prerelease,build
@@ -162,6 +174,9 @@ func StrictNewVersion(v string) (*Version, error) {
 // attempts to convert it to SemVer. If you want  to validate it was a strict
 // semantic version at parse time see StrictNewVersion().
 func NewVersion(v string) (*Version, error) {
+	if len(v) > MaxVersionLen {
+		return nil, ErrVersionTooLong
+	}
 	if CoerceNewVersion {
 		return coerceNewVersion(v)
 	}
@@ -581,7 +596,16 @@ func (v Version) MarshalText() ([]byte, error) {
 // Scan implements the SQL.Scanner interface.
 func (v *Version) Scan(value interface{}) error {
 	var s string
-	s, _ = value.(string)
+	switch t := value.(type) {
+	case string:
+		s = t
+	case []byte:
+		s = string(t)
+	case nil:
+		return fmt.Errorf("cannot scan nil into Version")
+	default:
+		return fmt.Errorf("unsupported Scan type %T", value)
+	}
 	temp, err := NewVersion(s)
 	if err != nil {
 		return err
