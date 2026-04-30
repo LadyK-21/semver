@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 )
 
@@ -972,6 +973,32 @@ func TestSQLScanner(t *testing.T) {
 	}
 }
 
+func TestScanInputTypes(t *testing.T) {
+	v := &Version{}
+	if err := v.Scan("1.2.3"); err != nil {
+		t.Errorf("Scan(string) unexpected error: %v", err)
+	}
+	if v.String() != "1.2.3" {
+		t.Errorf("Scan(string): got %q, want %q", v.String(), "1.2.3")
+	}
+
+	v = &Version{}
+	if err := v.Scan([]byte("2.3.4")); err != nil {
+		t.Errorf("Scan([]byte) unexpected error: %v", err)
+	}
+	if v.String() != "2.3.4" {
+		t.Errorf("Scan([]byte): got %q, want %q", v.String(), "2.3.4")
+	}
+
+	if err := (&Version{}).Scan(nil); err == nil {
+		t.Errorf("Scan(nil): expected error, got nil")
+	}
+
+	if err := (&Version{}).Scan(42); err == nil {
+		t.Errorf("Scan(int): expected error, got nil")
+	}
+}
+
 func TestDriverValuer(t *testing.T) {
 	sVer := "1.1.1"
 	x, err := StrictNewVersion(sVer)
@@ -1049,4 +1076,14 @@ func FuzzStrictNewVersion(f *testing.F) {
 	f.Fuzz(func(_ *testing.T, a string) {
 		_, _ = StrictNewVersion(a)
 	})
+}
+
+func TestNewVersionTooLong(t *testing.T) {
+	long := "1.0.0-" + strings.Repeat("a", MaxVersionLen)
+	if _, err := NewVersion(long); err != ErrVersionTooLong {
+		t.Errorf("NewVersion: expected ErrVersionTooLong, got: %v", err)
+	}
+	if _, err := StrictNewVersion(long); err != ErrVersionTooLong {
+		t.Errorf("StrictNewVersion: expected ErrVersionTooLong, got: %v", err)
+	}
 }

@@ -21,26 +21,26 @@ type Constraints struct {
 	IncludePrerelease bool
 }
 
-// maxConstraintLen is the maximum allowed length of a constraint string.
-const maxConstraintLen = 512
+// MaxConstraintLen is the maximum allowed length of a constraint string.
+const MaxConstraintLen = 512
 
-// maxConstraintGroups is the maximum number of OR groups allowed in a
+// MaxConstraintGroups is the maximum number of OR groups allowed in a
 // constraint string.
-const maxConstraintGroups = 32
+const MaxConstraintGroups = 32
 
 // ErrConstraintTooLong is returned when a constraint string exceeds the
 // maximum allowed length.
-var ErrConstraintTooLong = fmt.Errorf("constraint string is too long (max %d bytes)", maxConstraintLen)
+var ErrConstraintTooLong = fmt.Errorf("constraint string is too long (max %d bytes)", MaxConstraintLen)
 
 // ErrTooManyConstraintGroups is returned when a constraint string contains
 // too many OR groups.
-var ErrTooManyConstraintGroups = fmt.Errorf("too many constraint groups (max %d)", maxConstraintGroups)
+var ErrTooManyConstraintGroups = fmt.Errorf("too many constraint groups (max %d)", MaxConstraintGroups)
 
 // NewConstraint returns a Constraints instance that a Version instance can
 // be checked against. If there is a parse error it will be returned.
 func NewConstraint(c string) (*Constraints, error) {
 
-	if len(c) > maxConstraintLen {
+	if len(c) > MaxConstraintLen {
 		return nil, ErrConstraintTooLong
 	}
 
@@ -48,7 +48,7 @@ func NewConstraint(c string) (*Constraints, error) {
 	c = rewriteRange(c)
 
 	ors := strings.Split(c, "||")
-	if len(ors) > maxConstraintGroups {
+	if len(ors) > MaxConstraintGroups {
 		return nil, ErrTooManyConstraintGroups
 	}
 	lenors := len(ors)
